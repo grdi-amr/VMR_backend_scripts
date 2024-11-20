@@ -11,6 +11,7 @@ from fill_ontology_fields import fill_ontology_fields
 from create_ontology_dict import create_ontology_dict
 from create_dict_of_samples import create_dict_of_samples
 from create_dict_of_samples_one import create_dict_of_samples_one
+from gene_mode import parse, insert_data
 from feed_vmr_table import feed_vmr_table
 
 #function to check Nan strings
@@ -20,7 +21,7 @@ def connect_db():
        #server
        #database="metabaseappdb", user='gabriel', password='gaba1984', host='10.139.14.109', port= '5433'
         #local
-        database="metabaseappdb", user='gwajnberg', password='gaba1984', host='localhost', port= '5432'
+        database="vmrdb", user='gwajnberg', password='gaba1984', host='localhost', port= '5433'
     )
     
     
@@ -42,15 +43,24 @@ def main():
     parser.add_argument("-i", "--input_file", help="Input File to upload.", type=str)
     parser.add_argument("-o", "--one", help="input file is one sheet", default="F")
     parser.add_argument("-m", "--mode", help="For input sheet is metagenomics or wgs", default=str)
+    parser.add_argument("-g", "--gene_mode",help= "Add rgi/mob_suite output file to the VMR", default="F")
+
     args = parser.parse_args()
 
     
     
-    conn,cursor = connect_db()    
+    conn,cursor = connect_db()
+    if args.gene_mode == "T":
+        xls_file2 = args.input_file
+        print("uploading file ", xls_file2)
+        parsed_dict = parse(xls_file2)
+        insert_data(parsed_dict,conn,cursor,args.mode )
+
+        sys.exit()    
     
     #sys.exit()
-    xls_file = "GRDI_Harmonization-Template_v11.1.1.xlsm"
-    reference_file ="GRDI_Master-Reference-Guide_v11.1.1.xlsx"
+    xls_file = "GRDI_Harmonization-Template_v13.3.3.xlsm"
+    reference_file ="GRDI_Master-Reference-Guide_v13.3.3.xlsx"
     #valid_ontology_terms_and_values,antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms = create_ontology_as_dict(xls_file)
     if args.drop_off_table_add_sql == "T":
         drop_all_tables_query = sql.SQL("""
@@ -75,9 +85,13 @@ END $$;
     if args.fill_with_terms == "T":
         fill_ontology_fields(conn,cursor,reference_file)
     if (args.input_file):
-        valid_ontology_terms_and_values,antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms,environmental_conditions_terms,bioinformatics_terms,taxonomic_information_terms = create_ontology_dict(xls_file)
+        
+        valid_ontology_terms_and_values,antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms,environmental_conditions_terms,bioinformatics_terms,taxonomic_information_terms,extractionT_terms = create_ontology_dict(xls_file)
+        
         xls_file2 = args.input_file
         print("uploading file ", xls_file2)
+        #print (valid_ontology_terms_and_values)
+        #sys.exit()
         dict_of_samples = {}
         new_ont_terms = {}
         terms_accepting_multiple_values = []
@@ -87,7 +101,7 @@ END $$;
             
             
         else:
-            dict_of_samples,new_ont_terms,terms_accepting_multiple_values,sample_flagged_list = create_dict_of_samples_one(xls_file2, valid_ontology_terms_and_values, antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms,environmental_conditions_terms,bioinformatics_terms,taxonomic_information_terms)
+            dict_of_samples,new_ont_terms,terms_accepting_multiple_values,sample_flagged_list = create_dict_of_samples_one(xls_file2, valid_ontology_terms_and_values, antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms,environmental_conditions_terms,bioinformatics_terms,taxonomic_information_terms,extractionT_terms)
             
         mode =""
         if (args.mode == "wgs"):
