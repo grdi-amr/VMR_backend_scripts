@@ -446,9 +446,3 @@ def insert_data(data,field_name,conn,cursor,mode):
 
 
 
-
-
-
-
-                     
-                 

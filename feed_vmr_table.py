@@ -70,25 +70,36 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
         result=""
         if (isinstance(term, list)):
             print ("here before LIST",term)
-
-            term1 = term[0]
+            if (table == "alternative_sample_ids") | (table == "alternative_isolate_ids"):
+                sql_query = """
+                            SELECT *
+                            FROM """ + table + """
+                            WHERE """ + field[0] + """ = %s
+                            AND """ + field[1] + """ = %s;
+                            """
+                cursor.execute(sql_query,(term[0],term[1]))
+                result = cursor.fetchall()
+                print(result,"come on")
             
-            print(term)
-            #sys.exit()
-            term2,Oid = getTermAndId(term[1])
-            
-            print ("here ",term1,term2)
-            sql_query = """
-                     SELECT *
-                     FROM """ + table + """ 
-                     WHERE """+field[0]+""" = %s
-                    AND """+field[1]+""" = (SELECT id from """+field[2]+""" where """+field[3].upper()+""" = %s);
-                    """
-            print (sql_query,(term1,Oid))
-            #sys.exit()
-            cursor.execute(sql_query, (term1, Oid))
-            result = cursor.fetchall()
-            print(result,"come on")
+            else:
+                term1 = term[0]
+                
+                print(term)
+                #sys.exit()
+                term2,Oid = getTermAndId(term[1])
+                
+                print ("here ",term1,term2)
+                sql_query = """
+                        SELECT *
+                        FROM """ + table + """ 
+                        WHERE """+field[0]+""" = %s
+                        AND """+field[1]+""" = (SELECT id from """+field[2]+""" where """+field[3].upper()+""" = %s);
+                        """
+                print (sql_query,(term1,Oid))
+                #sys.exit()
+                cursor.execute(sql_query, (term1, Oid))
+                result = cursor.fetchall()
+                print(result,"come on")
             if (result):
                 result = "yes"
             else:
@@ -101,7 +112,8 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
             term,Oid = getTermAndId(term)
             command=""
             if (table == "metagenomic_extractions" or table == "wgs_extractions"):
-                command = "SELECT extraction_id from "+table+" where "+field.upper()+" = %s"    
+                command = "SELECT extraction_id from "+table+" where "+field.upper()+" = %s" 
+            
             else:
                 command = "SELECT id from "+table+" where "+field.upper()+" = %s"
             print (command,term)
@@ -186,6 +198,8 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
             else:
                 sql = "INSERT INTO "+str(table.upper())+"(EN_TERM,"+str(field.upper())+",EN_DESCRIPTION,FR_TERM,FR_DESCRIPTION,CURATED) VALUES (%s,%s,%s,%s,%s,%s)"
                 description = "Term still not in the vocabulary, added temporary untill solving the problem"
+                if not id:
+                    id = term
                 print_inserts(sql,(term,id,description))
                 print(sql,(term,id,description,'NULL','NULL','false'))
                 cursor.execute(sql,(term,id,description,'NULL','NULL','false'))
@@ -289,7 +303,9 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
             print (insert,list_terms)
             print_inserts(insert,list_terms)
             
-            
+            #f (table_name == 'extractions'):
+                #print ("look",insert,list_terms)
+                #sys.exit()
             
             cursor.execute(insert, list_terms)
             #print(cursor)
@@ -427,29 +443,29 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
                 list_alt = re.split("|",dict_of_samples['sample'][index]["alternative_sample_ID"])
                     
                 for alt in list_alt:
-                    alt_id = check_exists_id(alt,"alternative_sample_id","alternative_sample_ids")
-                    if not alt_id:
+                    alt_id = check_exists_id([sample_id,alt],["sample_id","alternative_sample_id"],"alternative_sample_ids")
+                    if alt_id  != "yes":
                         alt_id =create_insert({"alternative_sample_id":alt,"sample_id":sample_id},{"alternative_sample_id":"alternative_sample_id","sample_id":"sample_id","note":"note"},"","alternative_sample_ids",3) 
                     list_alt_ids.append(alt_id)
             elif (";" in dict_of_samples['sample'][index]["alternative_sample_ID"]):
                 list_alt = re.split(";",dict_of_samples['sample'][index]["alternative_sample_ID"])
                 for alt in list_alt:
-                    alt_id = check_exists_id(alt,"alternative_sample_id","alternative_sample_ids")
-                    if not alt_id:
+                    alt_id = check_exists_id([sample_id,alt],["sample_id","alternative_sample_id"],"alternative_sample_ids")
+                    if alt_id  != "yes":
                         alt_id =create_insert({"alternative_sample_id":alt,"sample_id":sample_id},{"alternative_sample_id":"alternative_sample_id","sample_id":"sample_id","note":"note"},"","alternative_sample_ids",3) 
                     list_alt_ids.append(alt_id)
                         
             elif ("," in dict_of_samples['sample'][index]["alternative_sample_ID"]):
                 list_alt = re.split(",",dict_of_samples['sample'][index]["alternative_sample_ID"])
                 for alt in list_alt:
-                    alt_id = check_exists_id(alt,"alternative_sample_id","alternative_sample_ids")
-                    if not alt_id:
+                    alt_id = check_exists_id([sample_id,alt],["sample_id","alternative_sample_id"],"alternative_sample_ids")
+                    if alt_id  != "yes":
                         alt_id =create_insert({"alternative_sample_id":alt,"sample_id":sample_id},{"alternative_sample_id":"alternative_sample_id","sample_id":"sample_id","note":"note"},"","alternative_sample_ids",3) 
                     list_alt_ids.append(alt_id)
             else:
                 alt = dict_of_samples['sample'][index]["alternative_sample_ID"]    
-                alt_id = check_exists_id(alt,"alternative_sample_id","alternative_sample_ids")
-                if not alt_id:
+                alt_id = check_exists_id([sample_id,alt],["sample_id","alternative_sample_id"],"alternative_sample_ids")
+                if alt_id  != "yes":
                     alt_id =create_insert({"alternative_sample_id":alt,"sample_id":sample_id},{"alternative_sample_id":"alternative_sample_id","sample_id":"sample_id","note":"note"},"","alternative_sample_ids",3) 
                 list_alt_ids.append(alt_id)         
         else:
@@ -743,30 +759,30 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
                     for alt in list_alt:
                         alt = alt.strip()
                         
-                        alt_id = check_exists_id(alt,"alternative_isolate_ID","alternative_isolate_ids")
-                        if not alt_id:
-                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",2) 
+                        alt_id = check_exists_id([isolate_id,alt],["isolate_id","alternative_isolate_ID"],"alternative_isolate_ids")
+                        if alt_id  != "yes":
+                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",3) 
                         list_alt_ids.append(alt_id)
                 elif (";" in dict_of_samples['isolate'][index]["alternative_isolate_ID"]):
                     list_alt = dict_of_samples['isolate'][index]["alternative_isolate_ID"].split(";")
                     for alt in list_alt:
-                        alt_id = check_exists_id(alt,"alternative_isolate_ID","alternative_isolate_ids")
-                        if not alt_id:
-                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",2) 
+                        alt_id = check_exists_id([isolate_id,alt],["isolate_id","alternative_isolate_ID"],"alternative_isolate_ids")
+                        if alt_id  != "yes":
+                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",3) 
                         list_alt_ids.append(alt_id)
                             
                 elif ("," in dict_of_samples['isolate'][index]["alternative_isolate_ID"]):
                     list_alt = dict_of_samples['isolate'][index]["alternative_isolate_ID"].split(",")
                     for alt in list_alt:
-                        alt_id = check_exists_id(alt,"alternative_isolate_ID","alternative_isolate_ids")
-                        if not alt_id:
-                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",2) 
+                        alt_id = check_exists_id([isolate_id,alt],["isolate_id","alternative_isolate_ID"],"alternative_isolate_ids")
+                        if alt_id  != "yes":
+                            alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",3) 
                         list_alt_ids.append(alt_id)
                 else:
                     alt = dict_of_samples['isolate'][index]["alternative_isolate_ID"]    
-                    alt_id = check_exists_id(alt,"alternative_isolate_id","alternative_isolate_ids")
-                    if not alt_id:
-                        alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",2) 
+                    alt_id = check_exists_id([isolate_id,alt],["isolate_id","alternative_isolate_ID"],"alternative_isolate_ids")
+                    if alt_id  != "yes":
+                        alt_id =create_insert({"alternative_isolate_ID":alt,"isolate_id":isolate_id},{"alternative_isolate_ID":"alternative_isolate_id","isolate_id":"isolate_id","note":"note"},"","alternative_isolate_ids",3) 
                     list_alt_ids.append(alt_id)         
             else:
                 sample_table_fields["alternative_isolate_id"]=None
@@ -818,6 +834,8 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
         # print (len(dict_of_samples['AMR']),"tamanho total")
     #sys.exit()
         print ("DONE RISK")
+    #rint (dict_of_samples['extractions'])
+    #sys.exit()
     for index in dict_of_samples['extractions']:
         flag_continue =0 
         if (mode == 1):
@@ -907,11 +925,11 @@ def feed_vmr_table (dict_of_samples,antimicrobian_agent_names_ids,sampleT_terms,
 
 
     """     
-           
+            print (extraction_id,'Acho que ferra ai', mode, '\n')
             dict_of_samples['sequence'][index]["extraction_id"]= extraction_id[0]
-            #print ("talvez aqui?")
+            print ("talvez aqui?")
             sequence_fields = {"extraction_id":"extraction_id","sequenced_by":"sequenced_by","contact_information":"contact_information","library_ID":"library_id","sequencing_project_name":"sequencing_project_name",
-                               "assembly_filename":"assembly_filename","sequencing_platform":"sequencing_platform","sequencing_instrument":"sequencing_instrument",                               
+                               "assembly_filename":"genome_sequence_filename","sequencing_platform":"sequencing_platform","sequencing_instrument":"sequencing_instrument",                               
                             "library_preparation_kit":"library_preparation_kit","sequencing_protocol":"sequencing_protocol","r1_fastq_filename":"r1_fastq_filename","r2_fastq_filename":"r2_fastq_filename",
                             "fast5_filename":"fast5_filename","sequencing_assay_type":"sequencing_assay_type","dna_fragment_length":"dna_fragment_length",
                                 "genomic_target_enrichment_method":"genomic_target_enrichment_method",

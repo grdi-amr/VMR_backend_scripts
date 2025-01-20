@@ -21,7 +21,7 @@ def create_dict_of_samples_one(xls, ontology_terms_and_values,antimicrobian_agen
     
     
     
-    fields = pd.read_excel(xls,na_values=[datetime.time(0, 0),"1900-01-00","Missing","missing","Missing [GENEPIO:0001618]","Not Applicable [GENEPIO:0001619]"],keep_default_na=False, header=1)
+    fields = pd.read_excel(xls,na_values=[datetime.time(0, 0),"1900-01-00","Missing","missing","Missing [GENEPIO:0001618]","Not Applicable [GENEPIO:0001619]","Not Collected [GENEPIO:0001620]"],keep_default_na=False, header=1)
     #print (fields[19])
     fields.fillna(0, inplace = True)
     #print(fields)
@@ -531,6 +531,8 @@ def create_dict_of_samples_one(xls, ontology_terms_and_values,antimicrobian_agen
             
         print ("Done Taxonomics......")
         extraction_temp={}
+        #print (extractionT_terms)
+        #sys.exit()
         for terms in extractionT_terms:
             if terms in temp_dict.keys():
                 extraction_temp[terms] = temp_dict[terms]
@@ -539,11 +541,7 @@ def create_dict_of_samples_one(xls, ontology_terms_and_values,antimicrobian_agen
         #sys.exit()
         flag_empty =0
         
-        for key_temp in extraction_temp.keys():
-            if 'sample_ID' not in key_temp and 'isolate_ID' not in key_temp:
-                flag_empty =1
-        if (flag_empty == 1):
-            dict_terms_file['extractions'][index]=extraction_temp
+        dict_terms_file['extractions'][index]=extraction_temp
         print ("Done Taxonomics......")
 
         

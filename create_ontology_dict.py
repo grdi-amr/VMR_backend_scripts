@@ -64,6 +64,8 @@ def create_ontology_dict(xls):
 
     # Add terms that start with any of the specified patterns to `extractionT_terms`
     # and remove them from `sampleT_terms`
+    #print (sampleT_terms)
+    #sys.exit()
     extractionT_terms.extend([term for term in sampleT_terms if any(term.startswith(pattern) for pattern in patterns)])
     sampleT_terms = [term for term in sampleT_terms if not any(term.startswith(pattern) for pattern in patterns)]
     
@@ -89,11 +91,12 @@ def create_ontology_dict(xls):
     ontology_dict = {key.strip(): value for key, value in ontology_dict.items()}
     fields_sheet = pd.read_excel(xls,keep_default_na=False, sheet_name="Reference Guide", header=4)
     #fields_sheet_filtered = fields_sheet[fields_sheet["Ontology ID"].str.contains("GENEPIO")==True]
-    fields_sheet_filtered = fields_sheet[(fields_sheet["Ontology ID"].str.contains("GENEPIO")) | (fields_sheet.iloc[:, 0].str.startswith("antimicrobial"))]
+    fields_sheet_filtered = fields_sheet[(fields_sheet["Ontology Identifier"].str.contains("GENEPIO") | fields_sheet.iloc[:, 1].str.startswith("antimicrobial")) & (fields_sheet["Field"])]
     
     dict_fields={}
     for index, row in fields_sheet_filtered.iterrows():
-        sample_key = row["Sample collection and processing"]
+        
+        sample_key = row["Field"]
         dict_fields[sample_key] = {}
     new_merged_ontology_dict = {}
     
@@ -107,8 +110,9 @@ def create_ontology_dict(xls):
         else:
             keypr = key
         if keypr in ontology_dict.keys():
-            
+           # print(keypr)
             str_list = list(filter(None, ontology_dict[keypr]))
+            #print (str_list)
             
             temp_list=[];
             for i in str_list:
@@ -143,13 +147,15 @@ def create_ontology_dict(xls):
             antimicrobian_agent_names_ids [antibiotics]= elements[keys]['term_id']
             
     #adding extra antibiotics that aren't in the vocabulary
-    antimicrobian_agent_names_ids ['amikacin']= 'CHEBI:2637'
-    antimicrobian_agent_names_ids ['kanamycin']= 'CHEBI:6104'
+    #antimicrobian_agent_names_ids ['amikacin']= 'CHEBI:2637'
+    #antimicrobian_agent_names_ids ['kanamycin']= 'CHEBI:6104'
     
     #print(new_merged_ontology_dict['food_product_origin geo_loc_name (country)'])
     #sys.exit()
     #sys.exit()
     #taxonomic_identification_process
+    #print(new_merged_ontology_dict['antimicrobial_measurement_sign'])
+    #sys.exit()
     
     return (new_merged_ontology_dict,antimicrobian_agent_names_ids,sampleT_terms,isolateT_terms,hostT_terms,sequenceT_terms,repositoryT_terms,riskT_terms,amrT_terms,antiT_terms,environmental_conditions_terms,bioinformatics_terms,taxonomic_information_terms,extractionT_terms)   
  
